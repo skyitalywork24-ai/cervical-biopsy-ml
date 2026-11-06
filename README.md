@@ -49,6 +49,6 @@ Evaluated on the held-out test split (decision threshold 0.5, positive class = b
 ## How to run
 ```bash
 pip install -r requirements.txt
-python train_models.py risk_factors_cervical_cancer.csv   # trains, saves models, writes test_data.csv
+python model/train_models.py   # trains, saves models to model/, writes test_data.csv
 streamlit run app.py
 ```

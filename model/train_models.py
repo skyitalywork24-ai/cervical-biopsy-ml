@@ -1,21 +1,22 @@
 """
 Train five classifiers on the UCI Cervical Cancer (Risk Factors) dataset.
 
-Usage:
-    python train_models.py risk_factors_cervical_cancer.csv
+Lives in model/ next to the dataset. Run from the repo root:
+    py model/train_models.py
+or pass a different CSV path:
+    py model/train_models.py path/to/file.csv
 
 Outputs:
-    model/<name>.joblib      - full pipeline (imputer + scaler + classifier)
+    model/<name>.joblib        - full pipeline (imputer + scaler + classifier)
     model/feature_columns.json
-    model/metrics.csv        - comparison table (paste into README)
-    test_data.csv            - held-out test split (features + Biopsy) for the app
+    model/metrics.csv          - comparison table (paste into README)
+    test_data.csv              - held-out test split (repo root) for the app
 """
 import json
 import sys
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -28,6 +29,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+
+MODEL_DIR = Path(__file__).resolve().parent      # .../model
+ROOT_DIR = MODEL_DIR.parent                      # repo root
+DEFAULT_CSV = MODEL_DIR / "risk_factors_cervical_cancer.csv"
 
 SEED = 42
 TARGET = "Biopsy"
@@ -44,7 +49,7 @@ MODELS = {
 }
 
 
-def load_data(path: str) -> pd.DataFrame:
+def load_data(path) -> pd.DataFrame:
     # Missing values in this dataset are written as "?"
     df = pd.read_csv(path, na_values="?")
     df.columns = [c.strip() for c in df.columns]
@@ -66,7 +71,7 @@ def evaluate(y_true, y_pred, y_prob) -> dict:
     }
 
 
-def main(csv_path: str):
+def main(csv_path):
     df = load_data(csv_path)
     print(f"Rows: {len(df)}, features: {df.shape[1] - 1}")
     print("Class balance:\n", df[TARGET].value_counts().to_string(), "\n")
@@ -75,7 +80,7 @@ def main(csv_path: str):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, stratify=y, random_state=SEED)
 
-    Path("model").mkdir(exist_ok=True)
+    MODEL_DIR.mkdir(exist_ok=True)
     rows = {}
     for name, clf in MODELS.items():
         pipe = Pipeline([
@@ -85,23 +90,21 @@ def main(csv_path: str):
         ])
         pipe.fit(X_train, y_train)
         prob = pipe.predict_proba(X_test)[:, 1]
-        pred = (prob >= 0.5).astype(int)
+        pred = (prob >= 0.5).astype(int)   # same rule the app uses
         rows[name] = evaluate(y_test, pred, prob)
-        joblib.dump(pipe, f"model/{name}.joblib")
+        joblib.dump(pipe, MODEL_DIR / f"{name}.joblib")
         print(f"{name:20s}", {k: round(v, 4) for k, v in rows[name].items()})
 
     metrics = pd.DataFrame(rows).T.round(4)
     metrics.index.name = "Model"
-    metrics.to_csv("model/metrics.csv")
-    json.dump(list(X.columns), open("model/feature_columns.json", "w"))
+    metrics.to_csv(MODEL_DIR / "metrics.csv")
+    json.dump(list(X.columns), open(MODEL_DIR / "feature_columns.json", "w"))
 
     test_df = X_test.copy()
     test_df[TARGET] = y_test
-    test_df.to_csv("test_data.csv", index=False)
-    print("\nSaved models, model/metrics.csv and test_data.csv")
+    test_df.to_csv(ROOT_DIR / "test_data.csv", index=False)
+    print("\nSaved models + metrics.csv in model/ and test_data.csv in repo root")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.exit("Usage: python train_models.py <path to risk_factors_cervical_cancer.csv>")
-    main(sys.argv[1])
+    main(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_CSV)
