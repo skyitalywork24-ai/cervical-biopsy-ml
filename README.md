@@ -44,7 +44,7 @@ Evaluated on the held-out test split (decision threshold 0.5, positive class = b
 | KNN | Accuracy of 0.93 is misleading. It predicts almost every patient as negative, so Recall, Precision and F1 are all 0. Distance-based voting is dominated by the majority class, and it has no class-weight option. Its AUC (0.69) shows the neighbour scores still carry some signal. |
 | Naive Bayes | The opposite failure: it flags nearly every patient as positive (Recall 1.0) but Accuracy collapses to 0.09 and Precision equals the base rate (0.067). Its independence assumption fits poorly because many features, such as the STD flags, are strongly correlated. |
 | Support Vector Machine | Best AUC (0.709), so it ranks patients best, but at the default 0.5 threshold it predicts everyone as negative, giving Accuracy 0.935 (the share of negatives) and zero Recall. Lowering the decision threshold, which the app allows, would be needed to make it useful. |
-| **Overall, Winner for your dataset?** | **Logistic Regression** is the best practical model because it is the only one with a positive MCC and a useful Recall/Precision balance. SVM is the best ranker by AUC. Accuracy alone would wrongly favour SVM and KNN. All results rest on a small test set of 14 positives, so they are noisy and should be read with caution. |
+| **Overall, Winner for your dataset?** | **Logistic Regression** is the best practical model because it has the highest F1 (0.246) and MCC (0.198) and the only useful Recall/Precision balance. SVM is the best ranker by AUC. Accuracy alone would wrongly favour SVM and KNN. All results rest on a small test set of 14 positives, so they are noisy and should be read with caution. |
 
 ## How to run
 ```bash
